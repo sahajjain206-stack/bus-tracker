@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Driver - GPS Sender</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 50px 20px; background: #1a1a1a; color: white; }
+        .status-box { border: 2px solid #333; padding: 20px; border-radius: 20px; background: #222; }
+        .live-indicator { height: 12px; width: 12px; background: #00ff00; border-radius: 50%; display: inline-block; margin-right: 8px; box-shadow: 0 0 10px #00ff00; }
+    </style>
+</head>
+<body>
+    <div class="status-box">
+        <h2><span class="live-indicator"></span>Bus Driver App</h2>
+        <p id="coords">Searching for GPS...</p>
+        <p id="log">Initializing...</p>
+    </div>
+
+    <script>
+        const log = document.getElementById("log");
+        const coords = document.getElementById("coords");
+
+        async function sendLocation(lat, lng) {
+            try {
+                const response = await fetch("https://bus-tracker-production-9e41.up.railway.app/update", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ lat, lng })
+                });
+                if(response.ok) {
+                    log.innerText = "✅ Successfully synced with server";
+                }
+            } catch (err) {
+                log.innerText = "⚠️ Connection error. Retrying...";
+            }
+        }
+
+        if (navigator.geolocation) {
+            // This stays active and fires every time the phone moves
+            navigator.geolocation.watchPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    coords.innerHTML = `Lat: ${lat.toFixed(6)}<br>Lng: ${lng.toFixed(6)}`;
+                    sendLocation(lat, lng);
+                },
+                (err) => { log.innerText = "❌ Error: Please enable Location Access"; },
+                { enableHighAccuracy: true, maximumAge: 0 }
+            );
+        } else {
+            log.innerText = "❌ GPS not supported on this device";
+        }
+    </script>
+</body>
+</html>
